@@ -1,0 +1,23 @@
+# Manifest for the Loom Foundation workspace.
+
+manifest:
+  remotes:
+    - name: loom-foundation
+      url-base: https://github.com/loom-foundation
+
+  defaults:
+    remote: loom-foundation
+    revision: main
+
+  self:
+    path: manifest
+
+  projects:
+    - name: manifesto
+      path: manifesto
+    - name: org
+      path: org
+    - name: note
+      path: corpus/note
+    - name: .github
+      path: .github
