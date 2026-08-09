@@ -1,23 +1,54 @@
-# Manifest for the Loom Foundation workspace.
+# west.yml: the Loom Foundation workspace manifest
+#
+# west is used here purely as a multi-repository workspace orchestrator
+# (independent sibling checkouts). No Zephyr RTOS or build system
+# functionality is used.
+#
+# Usage:
+#   west init -l manifest       # one-time: register the workspace
+#   west update -k -r           # clone or fast-forward all projects, keeping
+#                               # checked-out branches instead of detaching HEAD
+#   west manifest --freeze      # snapshot all revisions to SHAs
 
 manifest:
   remotes:
-    - name: loom-foundation
+    - name: origin
       url-base: https://github.com/loom-foundation
 
   defaults:
-    remote: loom-foundation
+    remote: origin
     revision: main
 
   self:
     path: manifest
 
   projects:
-    - name: manifesto
-      path: manifesto
-    - name: org
-      path: org
-    - name: note
-      path: corpus/note
     - name: .github
       path: .github
+      description: "Organisation and community info page on Github."
+      userdata:
+        role: community
+
+    - name: manifesto
+      path: manifesto
+      description: "The Loom Manifesto."
+      userdata:
+        role: philosophy
+
+    - name: org
+      path: org
+      description: "The Loom Foundation: charter, stewardship, brand, trademarks."
+      userdata:
+        role: governance
+
+    - name: note-authoring
+      path: corpus/note-authoring
+      description: "Conventions and principles for authoring clear, concise, and maintainable notes."
+      userdata:
+        role: methodology
+
+    - name: note
+      path: corpus/note
+      description: "Note: a methodology for capturing intent (needs, requirements, design) as plain-text, Git-native artifacts."
+      userdata:
+        role: methodology
