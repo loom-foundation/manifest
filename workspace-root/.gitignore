@@ -1,0 +1,4 @@
+# Workspace-root scaffolding. The workspace root is not itself a repository;
+# this file keeps transient scratch space out of any git operation run from here.
+
+tmp/
