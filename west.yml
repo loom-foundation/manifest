@@ -35,6 +35,12 @@ manifest:
       userdata:
         role: philosophy
 
+    - name: manifesto-site
+      path: manifesto-site
+      description: "The site that publishes the manifesto and its signatories at theloommanifesto.org."
+      userdata:
+        role: publishing
+
     - name: org
       path: org
       description: "The Loom Foundation: charter, stewardship, brand, trademarks."
