@@ -46,6 +46,7 @@ manifest:
       description: "The site that publishes the manifesto and its signatories at theloommanifesto.org."
       userdata:
         role: application
+        protected: true
 
     - name: corpus-note-authoring
       path: corpora/note-authoring
@@ -58,24 +59,29 @@ manifest:
       description: "Note: a methodology for capturing intent (needs, requirements, design) as plain-text, Git-native artifacts."
       userdata:
         role: methodology
+        protected: true
+        required-checks: [check]
 
     - name: app-note-docs-site
       path: apps/note-docs-site
       description: "The disposable VitePress renderer that builds the Note docs from corpora/note/docs into a static site."
       userdata:
         role: application
+        protected: true
 
     - name: app-sett
       path: apps/sett
       description: "sett, the Note reference tool."
       userdata:
         role: application
+        protected: true
 
     - name: skill-note
       path: skills/note
       description: "The note skill: a distilled operating guide to the Note method for agents."
       userdata:
         role: skill
+        protected: true
 
     - name: site-manifesto
       path: sites/manifesto

@@ -19,11 +19,18 @@
  *                                         instead of detaching HEAD)
  *   push                                  Run `west forall -c "git push"` (push every repo)
  *   status                                Run `west list` (workspace overview)
- *   new-repo <name> "<desc>" [--into <dir>] [--role <r>] [--remote]
+ *   new-repo <name> "<desc>" [--into <dir>] [--role <r>] [--remote] [--protect]
  *                                         Scaffold a new repository in the
  *                                         workspace, or adopt one that already
  *                                         exists locally with content
- *                                         (--into places it at <dir>/<name>)
+ *                                         (--into places it at <dir>/<name>;
+ *                                         --protect marks it protected in
+ *                                         west.yml and, with --remote, applies
+ *                                         the protection after the push)
+ *   protect [<name>...]                   Apply main-branch protection to every
+ *                                         project west.yml marks
+ *                                         `userdata: protected: true` (or only
+ *                                         to the named ones)
  */
 
 import { spawnSync }                     from 'node:child_process';
@@ -163,10 +170,26 @@ Commands:
   status                                  Run \`west list\` for a workspace overview.
                                           If west is not initialised, a hint is shown.
 
+  protect [<name>...]                     Apply main-branch protection to every
+                                          project west.yml marks with
+                                          \`userdata: protected: true\`, or only
+                                          to the named ones (each must still be
+                                          marked; west.yml is the record of
+                                          which repositories are protected).
+                                          The protection requires a pull request
+                                          (no approvals demanded), forbids force
+                                          pushes and deletions, and binds
+                                          administrators. A project may also
+                                          carry \`required-checks: […]\` in its
+                                          userdata; those status checks are then
+                                          required and must be up to date.
+                                          Needs \`gh\` authenticated with admin
+                                          rights on the repositories.
+
   new-repo <name> "<description>"         Scaffold a new repository, or adopt one
            [--into <dir>]                   that already exists locally with content:
            [--role <role>]                  • Validates the name (lowercase, hyphens)
-           [--remote]                       • If <workspace>/<dir>/<name>/ does not
+           [--remote] [--protect]           • If <workspace>/<dir>/<name>/ does not
                                                exist: creates it, copies the scaffold
                                                .gitignore and README.md, then
                                                git-inits and commits it
@@ -188,6 +211,10 @@ Commands:
                                                current branch to it instead.
                                                Without --remote: prints the
                                                commands so you can run them yourself
+                                             • With --protect: marks the project
+                                               \`protected: true\` in west.yml and,
+                                               when --remote pushed it, applies the
+                                               protection right away
                                              • Prints next steps
 `.trim());
 }
@@ -263,9 +290,10 @@ function cmdPush() {
 function cmdNewRepo(args) {
   // Parse args: new-repo <name> "<description>" [--into <dir>] [--role <role>] [--remote]
   const positional = [];
-  let role     = null;
-  let doRemote = false;
-  let into     = null;
+  let role      = null;
+  let doRemote  = false;
+  let doProtect = false;
+  let into      = null;
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--role' && args[i + 1]) {
@@ -274,6 +302,8 @@ function cmdNewRepo(args) {
       into = args[++i];
     } else if (args[i] === '--remote') {
       doRemote = true;
+    } else if (args[i] === '--protect') {
+      doProtect = true;
     } else {
       positional.push(args[i]);
     }
@@ -373,9 +403,12 @@ function cmdNewRepo(args) {
   //    there, as happens for a repository adopted after being wired in by hand.
   if (westYmlHasProject(name)) {
     console.log(`\nwest.yml already declares project "${name}"; leaving it as it stands.`);
+    if (doProtect && !westYmlProtection().get(name)?.protected) {
+      console.log('  Add `protected: true` under its `userdata:` block by hand to record the protection.');
+    }
   } else {
     console.log('\nAdding the project block to west.yml ...');
-    appendToWestYml({ name, path: repoPathPosix, description, role: effectiveRole });
+    appendToWestYml({ name, path: repoPathPosix, description, role: effectiveRole, protected: doProtect });
   }
 
   // 5. Remote handling.
@@ -408,6 +441,10 @@ function cmdNewRepo(args) {
         console.error(`  ${ghCreateCmd}`);
       }
     }
+    if (doProtect) {
+      console.log('\nApplying main-branch protection ...');
+      applyProtection(org, name, []);
+    }
   } else {
     console.log('\nTo create the GitHub remote and push, run:');
     console.log(`  ${ghCreateCmd}`);
@@ -415,6 +452,9 @@ function cmdNewRepo(args) {
     console.log(`  cd ${repoDir}`);
     console.log(`  git remote add origin ${remoteUrl}`);
     console.log(`  git push -u origin ${branch}`);
+    if (doProtect) {
+      console.log(`  then: ./manage.sh protect ${name}`);
+    }
   }
 
   // 6. Print the next steps.
@@ -427,6 +467,144 @@ ${isAdopting ? '' : `  · Edit ${repoDir}/README.md to fill in the description.\
   · From the workspace topdir, run \`./manage.sh update\` to let west track the repository.
   · Commit the west.yml update in manifest (if it changed).
 `);
+}
+
+// ---------------------------------------------------------------------------
+// Branch protection
+// ---------------------------------------------------------------------------
+
+/**
+ * Read each project's protection metadata from west.yml.
+ *
+ * `west list` cannot print userdata, so this scans west.yml itself, in the
+ * same targeted spirit as westYmlHasProject(): only `- name:` boundaries and
+ * the two protection keys are recognised, and anything else is left to west.
+ *
+ * Returns a Map from project name to { protected, requiredChecks }.
+ */
+function westYmlProtection() {
+  const src   = readFileSync(WEST_YML, 'utf8');
+  const lines = src.split(/\r?\n/);
+  const map   = new Map();
+
+  let current = null;
+  for (const line of lines) {
+    const nameMatch = line.match(/^\s*-\s*name:\s*(\S+)\s*$/);
+    if (nameMatch) {
+      current = { protected: false, requiredChecks: [] };
+      map.set(nameMatch[1], current);
+      continue;
+    }
+    if (!current) continue;
+    if (/^\s*protected:\s*true\s*$/.test(line)) current.protected = true;
+    const checks = line.match(/^\s*required-checks:\s*\[([^\]]*)\]\s*$/);
+    if (checks) {
+      current.requiredChecks = checks[1]
+        .split(',')
+        .map(s => s.trim().replace(/^["']|["']$/g, ''))
+        .filter(Boolean);
+    }
+  }
+  return map;
+}
+
+/**
+ * The branch-protection settings applied to a protected project's main branch:
+ * corpus-note's owner-agreed gate, generalised. A pull request is required (no
+ * approvals demanded, so the owner merges their own), force pushes and branch
+ * deletion are forbidden, and administrators are bound. When the project
+ * declares `required-checks`, those status checks must pass and be up to date;
+ * without them no status check is required, since demanding a context no
+ * workflow reports would block every merge.
+ */
+function protectionBody(requiredChecks) {
+  return {
+    required_status_checks: requiredChecks.length > 0
+      ? { strict: true, contexts: requiredChecks }
+      : null,
+    enforce_admins: true,
+    required_pull_request_reviews: { required_approving_review_count: 0 },
+    restrictions: null,
+    allow_force_pushes: false,
+    allow_deletions: false,
+  };
+}
+
+/**
+ * Apply main-branch protection to one repository via `gh api`.
+ * Returns true on success.
+ */
+function applyProtection(org, name, requiredChecks) {
+  const body = JSON.stringify(protectionBody(requiredChecks));
+  const result = spawnSync('gh', [
+    'api', '-X', 'PUT',
+    `repos/${org}/${name}/branches/main/protection`,
+    '--input', '-',
+  ], {
+    input: body,
+    stdio: ['pipe', 'pipe', 'pipe'],
+    shell: process.platform === 'win32',
+    encoding: 'utf8',
+  });
+  if (result.error || result.status !== 0) {
+    const detail = firstLine(result.stderr || '') || `exit ${result.status}`;
+    console.error(`  ${name}: FAILED (${detail})`);
+    return false;
+  }
+  const checksNote = requiredChecks.length > 0
+    ? `required checks: ${requiredChecks.join(', ')}`
+    : 'no required checks';
+  console.log(`  ${name}: main protected (${checksNote})`);
+  return true;
+}
+
+function cmdProtect(args) {
+  const wanted     = args.filter(a => !a.startsWith('--'));
+  const protection = westYmlProtection();
+  const projects   = westProjects();
+  if (projects.length === 0) process.exit(1);
+
+  // Resolve each project's organisation from its own remote url.
+  const byName = new Map(projects.map(p => [p.name, p]));
+
+  let targets;
+  if (wanted.length > 0) {
+    targets = [];
+    for (const name of wanted) {
+      if (!byName.has(name)) {
+        console.error(`Unknown project "${name}"; it carries no remote url in west.yml.`);
+        process.exit(1);
+      }
+      if (!protection.get(name)?.protected) {
+        console.error(`Project "${name}" is not marked protected in west.yml.`);
+        console.error('west.yml is the record of which repositories are protected: add');
+        console.error('`protected: true` under its `userdata:` block, then run this again.');
+        process.exit(1);
+      }
+      targets.push(name);
+    }
+  } else {
+    targets = projects
+      .map(p => p.name)
+      .filter(name => protection.get(name)?.protected);
+    if (targets.length === 0) {
+      console.log('No project in west.yml is marked `userdata: protected: true`; nothing to do.');
+      return;
+    }
+  }
+
+  console.log('Applying main-branch protection ...\n');
+  let failures = 0;
+  for (const name of targets) {
+    const org = byName.get(name).url.replace(/\/+$/, '').split('/').slice(-2, -1)[0];
+    const checks = protection.get(name).requiredChecks;
+    if (!applyProtection(org, name, checks)) failures++;
+  }
+  if (failures > 0) {
+    console.error(`\n${failures} of ${targets.length} repositories failed; see above.`);
+    process.exit(1);
+  }
+  console.log(`\nAll ${targets.length} protected.`);
 }
 
 /** True when west.yml already carries a `- name: <name>` project entry. */
@@ -499,16 +677,18 @@ function resolveRepoTarget(into, name) {
  * and the revision come from the manifest's `defaults:` block, so repeating
  * them per project would be redundant and would drift from the manifest style.
  */
-function projectBlockLines({ name, path: repoPath, description, role }, itemIndent) {
+function projectBlockLines({ name, path: repoPath, description, role, protected: isProtected }, itemIndent) {
   const item = ' '.repeat(itemIndent);       // indentation of the `- name:` line
   const prop = ' '.repeat(itemIndent + 2);   // indentation of its properties
-  return [
+  const lines = [
     `${item}- name: ${name}`,
     `${prop}path: ${repoPath}`,
     `${prop}description: "${description}"`,
     `${prop}userdata:`,
     `${prop}  role: ${role}`,
   ];
+  if (isProtected) lines.push(`${prop}  protected: true`);
+  return lines;
 }
 
 /** Indentation width of a line, or null for a blank line or a full-line comment. */
@@ -596,6 +776,7 @@ switch (cmd) {
   case 'push':     cmdPush();          break;
   case 'status':   cmdStatus();        break;
   case 'new-repo': cmdNewRepo(rest);   break;
+  case 'protect':  cmdProtect(rest);   break;
   default:
     console.error(`Unknown command: ${cmd}`);
     console.error('Run `node manage.mjs help` for usage.');
