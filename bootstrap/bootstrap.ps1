@@ -259,6 +259,7 @@ $Links = @(
     @{ Name = 'AGENTS.md';  Target = "$ManifestName\workspace-root\AGENTS.md" },
     @{ Name = 'CLAUDE.md';  Target = "$ManifestName\workspace-root\CLAUDE.md" },
     @{ Name = '.gitignore'; Target = "$ManifestName\workspace-root\.gitignore" },
+    @{ Name = 'west.yml';   Target = "$ManifestName\west.yml" },
     @{ Name = 'manage.cmd'; Target = "$ManifestName\manage.cmd" }
 )
 foreach ($link in $Links) {
@@ -278,7 +279,7 @@ foreach ($link in $Links) {
 # tmp\ belongs to no project at all. Create the fixed set here so a fresh
 # checkout has the same shape on every platform.
 Info 'Step 8: Ensuring workspace directories...'
-foreach ($dir in @('corpus', 'packages', 'tmp')) {
+foreach ($dir in @('apps', 'corpora', 'packages', 'sites', 'skills', 'tmp')) {
     New-Item -ItemType Directory -Force -Path (Join-Path $WorkspaceDir $dir) | Out-Null
     Ok "$dir\ present"
 }

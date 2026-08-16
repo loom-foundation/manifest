@@ -252,6 +252,7 @@ link_root_file "manifest/workspace-root/README.md"  "README.md"
 link_root_file "manifest/workspace-root/AGENTS.md"  "AGENTS.md"
 link_root_file "manifest/workspace-root/CLAUDE.md"  "CLAUDE.md"
 link_root_file "manifest/workspace-root/.gitignore" ".gitignore"
+link_root_file "manifest/west.yml"                  "west.yml"
 
 # The manage launcher needs the executable bit at its source, since the
 # symlink carries the mode of whatever it points at.
@@ -269,7 +270,7 @@ link_root_file "manifest/manage.sh" "manage.sh"
 # checkout. Create them here so the layout is the same on every machine and on
 # both platforms.
 info "Step 8: Ensuring workspace directories..."
-for dir in corpus packages tmp; do
+for dir in apps corpora packages sites skills tmp; do
   mkdir -p "$WORKSPACE_DIR/$dir"
   ok "$dir/ present"
 done
