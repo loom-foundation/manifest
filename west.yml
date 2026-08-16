@@ -85,6 +85,13 @@ manifest:
         protected: true
         required-checks: [check]
 
+    - name: infra-cloudflare
+      path: infra/cloudflare
+      description: "The Foundation's Cloudflare infrastructure declared in OpenTofu."
+      userdata:
+        role: infrastructure
+        protected: true
+
     - name: site-manifesto
       path: sites/manifesto
       description: "The built static HTML of the manifesto site (theloommanifesto.org)."
