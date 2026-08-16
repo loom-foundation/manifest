@@ -83,6 +83,7 @@ manifest:
       userdata:
         role: skill
         protected: true
+        required-checks: [check]
 
     - name: site-manifesto
       path: sites/manifesto
