@@ -2,7 +2,7 @@
 #
 # Run this yourself: it installs system packages and modifies your PATH.
 #
-# Usage (from the manifest directory or the workspace top directory):
+# Usage (from the workspace repository or the workspace top directory):
 #   bootstrap\bootstrap.ps1
 #
 # This script is idempotent: every step checks for an existing installation
@@ -94,18 +94,18 @@ function New-RelativeFileSymlink {
 }
 
 # ---------------------------------------------------------------------------
-# Locate the workspace top directory (the parent of the manifest directory)
+# Locate the workspace top directory (the parent of the workspace repository)
 # ---------------------------------------------------------------------------
 
 # Resolve paths from this script's own location, so the bootstrap works no
 # matter which directory it is invoked from.
 $ScriptDir     = Split-Path -Parent $MyInvocation.MyCommand.Path
-$ManifestDir   = Split-Path -Parent $ScriptDir
-$WorkspaceDir  = Split-Path -Parent $ManifestDir
-$ManifestName  = Split-Path -Leaf $ManifestDir
+$RepoDir       = Split-Path -Parent $ScriptDir
+$WorkspaceDir  = Split-Path -Parent $RepoDir
+$RepoName      = Split-Path -Leaf $RepoDir
 
 Info "Workspace root : $WorkspaceDir"
-Info "Manifest dir   : $ManifestDir"
+Info "Repository dir : $RepoDir"
 
 # ---------------------------------------------------------------------------
 # 1. Verify prerequisites: winget and Developer Mode
@@ -219,10 +219,10 @@ $WestDir = Join-Path $WorkspaceDir '.west'
 if (Test-Path $WestDir) {
     Ok '.west directory already exists; skipping west init'
 } else {
-    Info "Running: west init -l $ManifestName (from $WorkspaceDir)"
+    Info "Running: west init -l $RepoName (from $WorkspaceDir)"
     Push-Location $WorkspaceDir
     try {
-        west init -l $ManifestName
+        west init -l $RepoName
         Ok 'west workspace initialised'
     } finally {
         Pop-Location
@@ -250,17 +250,17 @@ try {
 # ---------------------------------------------------------------------------
 
 Info 'Step 7: Linking workspace-root files...'
-# Symbolic links, so a `west update` of the manifest repository propagates edits
+# Symbolic links, so a `west update` of the workspace repository propagates edits
 # to the workspace root. Developer Mode (verified in Step 1) lets these be
 # created without elevation. AGENTS.md and CLAUDE.md carry the agent brief that
 # points AI agents at the governing Loom Foundation intent corpora.
 $Links = @(
-    @{ Name = 'README.md';  Target = "$ManifestName\workspace-root\README.md" },
-    @{ Name = 'AGENTS.md';  Target = "$ManifestName\workspace-root\AGENTS.md" },
-    @{ Name = 'CLAUDE.md';  Target = "$ManifestName\workspace-root\CLAUDE.md" },
-    @{ Name = '.gitignore'; Target = "$ManifestName\workspace-root\.gitignore" },
-    @{ Name = 'west.yml';   Target = "$ManifestName\west.yml" },
-    @{ Name = 'manage.cmd'; Target = "$ManifestName\manage.cmd" }
+    @{ Name = 'README.md';  Target = "$RepoName\workspace-root\README.md" },
+    @{ Name = 'AGENTS.md';  Target = "$RepoName\workspace-root\AGENTS.md" },
+    @{ Name = 'CLAUDE.md';  Target = "$RepoName\workspace-root\CLAUDE.md" },
+    @{ Name = '.gitignore'; Target = "$RepoName\workspace-root\.gitignore" },
+    @{ Name = 'west.yml';   Target = "$RepoName\west.yml" },
+    @{ Name = 'manage.cmd'; Target = "$RepoName\manage.cmd" }
 )
 foreach ($link in $Links) {
     $source = Join-Path $WorkspaceDir $link.Target
@@ -292,4 +292,4 @@ Info 'Bootstrap complete.'
 Info 'Next steps:'
 Info '  * Restart your terminal so the PATH changes take effect.'
 Info "  * Run '.\manage.cmd help' from the workspace root for common tasks."
-Info "  * See README.md at the workspace root, or $ManifestName\README.md."
+Info "  * See README.md at the workspace root, or $RepoName\README.md."

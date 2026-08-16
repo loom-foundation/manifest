@@ -1,4 +1,4 @@
-# manifest
+# workspace
 
 The coordinator repository for the Loom Foundation workspace.
 It holds the [west](https://docs.zephyrproject.org/latest/develop/west/) multi-repository manifest ([`west.yml`](west.yml)), the bootstrap scripts, and the workspace management CLI (`manage.mjs`).
@@ -32,13 +32,13 @@ Run it in the directory where you want the workspace to appear.
 **macOS and Linux:**
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/loom-foundation/manifest/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/loom-foundation/workspace/main/install.sh | sh
 ```
 
 **Windows (PowerShell):**
 
 ```powershell
-irm https://raw.githubusercontent.com/loom-foundation/manifest/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/loom-foundation/workspace/main/install.ps1 | iex
 ```
 
 The workspace directory is named `loom-foundation` by default, created inside the directory you ran the command from.
@@ -46,7 +46,7 @@ The installer prints the proposed path and waits: press Enter to accept it, or t
 Set `LOOM_WORKSPACE` beforehand to skip the prompt entirely (`LOOM_WORKSPACE=~/work/loom` on macOS and Linux, `$env:LOOM_WORKSPACE = 'C:\work\loom'` on Windows).
 When the installer runs with no terminal attached, it takes the default without prompting.
 
-The installer installs git if it is absent, creates the workspace directory, clones this repository into it as `manifest`, and then hands off to `bootstrap/bootstrap.sh` (or `bootstrap\bootstrap.ps1`).
+The installer installs git if it is absent, creates the workspace directory, clones this repository into it as `workspace`, and then hands off to `bootstrap/bootstrap.sh` (or `bootstrap\bootstrap.ps1`).
 Every Loom Foundation repository is public, so no GitHub sign-in and no organisation membership are needed; the clones happen over plain https.
 
 > **Status of the Windows path.**
@@ -69,15 +69,15 @@ If you would rather clone first, clone **into** the directory you intend to be t
 
 ```sh
 mkdir -p ~/Code/loom-foundation
-git clone https://github.com/loom-foundation/manifest.git ~/Code/loom-foundation/manifest
-sh ~/Code/loom-foundation/manifest/bootstrap/bootstrap.sh
+git clone https://github.com/loom-foundation/workspace.git ~/Code/loom-foundation/workspace
+sh ~/Code/loom-foundation/workspace/bootstrap/bootstrap.sh
 ```
 
-On Windows, the last line becomes `~\Code\loom-foundation\manifest\bootstrap\bootstrap.ps1`.
+On Windows, the last line becomes `~\Code\loom-foundation\workspace\bootstrap\bootstrap.ps1`.
 
 The order matters.
-The bootstrap resolves the workspace top directory as the **parent of the `manifest` directory**, working from the script's own location, and runs `west init -l manifest` from there.
-So `manifest` must already sit inside the directory you want to become the workspace.
+The bootstrap resolves the workspace top directory as the **parent of the `workspace` directory**, working from the script's own location, and runs `west init -l workspace` from there.
+So `workspace` must already sit inside the directory you want to become the workspace.
 Clone it into `~/Code` and `~/Code` becomes the workspace top directory, with every project checkout landing beside the rest of your work.
 The one-line installer arranges the correct order for you.
 
@@ -90,8 +90,8 @@ Every step checks for existing state before acting, so re-running it is safe.
 3. Installs west with `uv tool install west`.
 4. Ensures the uv shim directory (`~/.local/bin`, or `%USERPROFILE%\.local\bin`) is on PATH via `uv tool update-shell`, then verifies that `west` resolves.
 5. Sets `zephyr.base` to `not-using-zephyr`, so west stops warning about a Zephyr tree that does not exist.
-6. Runs `west init -l manifest` when `.west/` is absent, then `west update -k -r`.
-7. Creates the workspace-root symbolic links, all with relative targets under `manifest/`, so they survive the workspace being moved.
+6. Runs `west init -l workspace` when `.west/` is absent, then `west update -k -r`.
+7. Creates the workspace-root symbolic links, all with relative targets under `workspace/`, so they survive the workspace being moved.
 8. Creates `corpus/`, `packages/`, and `tmp/`.
 
 Restart your shell afterwards, so the PATH change takes effect.
@@ -125,14 +125,14 @@ After the bootstrap completes:
 
 ```
 loom-foundation/              # the workspace top directory
-├── .west/config              # west marker; points at manifest/west.yml
-├── README.md                 # symlink -> manifest/workspace-root/README.md
-├── AGENTS.md                 # symlink -> manifest/workspace-root/AGENTS.md
-├── CLAUDE.md                 # symlink -> manifest/workspace-root/CLAUDE.md
-├── .gitignore                # symlink -> manifest/workspace-root/.gitignore
-├── manage.sh                 # symlink -> manifest/manage.sh   (macOS and Linux)
-├── manage.cmd                # symlink -> manifest/manage.cmd  (Windows)
-├── manifest/                 # this repository, the entry point
+├── .west/config              # west marker; points at workspace/west.yml
+├── README.md                 # symlink -> workspace/workspace-root/README.md
+├── AGENTS.md                 # symlink -> workspace/workspace-root/AGENTS.md
+├── CLAUDE.md                 # symlink -> workspace/workspace-root/CLAUDE.md
+├── .gitignore                # symlink -> workspace/workspace-root/.gitignore
+├── manage.sh                 # symlink -> workspace/manage.sh   (macOS and Linux)
+├── manage.cmd                # symlink -> workspace/manage.cmd  (Windows)
+├── workspace/                # this repository, the entry point
 │   ├── west.yml              # the repository-of-repositories manifest
 │   ├── manage.mjs            # the workspace management CLI (all the logic)
 │   ├── manage.sh             # POSIX launcher
@@ -164,7 +164,7 @@ The project paths come from [`west.yml`](west.yml), which is the single source o
 Pull the repository you are working in, then update the workspace from the top directory:
 
 ```sh
-git pull                # in manifest, or any project repository
+git pull                # in workspace, or any project repository
 ./manage.sh update      # from the workspace top directory
 ```
 
@@ -232,15 +232,15 @@ The organisation is derived from an existing project's url as reported by `west 
 > `--remote` creates a **public** repository.
 > The workspace manifest is public, so a private repository listed in it would simply fail to clone for everyone else.
 
-Afterwards, commit the `west.yml` change in `manifest`, and run `./manage.sh update` so west starts tracking the new repository.
+Afterwards, commit the `west.yml` change in `workspace`, and run `./manage.sh update` so west starts tracking the new repository.
 
 ### By hand
 
 1. Create the GitHub repository: `gh repo create loom-foundation/<name> --public`.
-2. Copy `manifest/repo-template/.gitignore` and `manifest/repo-template/README.md` into it, and fill the README in.
+2. Copy `workspace/repo-template/.gitignore` and `workspace/repo-template/README.md` into it, and fill the README in.
 3. Register it: add a project block to `west.yml` with `name`, `path`, a one-line `description`, and `userdata: { role: <role> }`. This is the only place the repository list lives.
 4. Run `west update` (or `./manage.sh update`) from the workspace top directory to materialise it.
-5. Commit the `west.yml` change in `manifest`.
+5. Commit the `west.yml` change in `workspace`.
 
 ---
 
@@ -248,7 +248,7 @@ Afterwards, commit the `west.yml` change in `manifest`, and run `./manage.sh upd
 
 Run these from the workspace top directory, where the bootstrap placed the launcher symlink.
 Use `./manage.sh` on macOS and Linux, `.\manage.cmd` on Windows.
-Both are thin shims over `manifest/manage.mjs`; `node manifest/manage.mjs <command>` works identically, from any directory, because the CLI resolves its paths from its own location rather than from your current one.
+Both are thin shims over `workspace/manage.mjs`; `node workspace/manage.mjs <command>` works identically, from any directory, because the CLI resolves its paths from its own location rather than from your current one.
 
 | Command | What it does |
 |---|---|
@@ -256,7 +256,7 @@ Both are thin shims over `manifest/manage.mjs`; `node manifest/manage.mjs <comma
 | `doctor` | Checks git, node, west, uv, and gh on PATH, printing each tool's version or `MISSING`. Exits non-zero when a **required** tool (git, node, west) is absent; uv and gh are reported as optional. |
 | `update` | Runs `west update -k -r`. |
 | `push` | Runs `west forall -c "git push"`, pushing every repository. |
-| `status` | Runs `west list` for a workspace overview. Prints a `west init -l manifest` hint when the workspace is not initialised. |
+| `status` | Runs `west list` for a workspace overview. Prints a `west init -l workspace` hint when the workspace is not initialised. |
 | `new-repo <name> "<description>"` | Scaffolds a new repository, or adopts an existing local one. See above. |
 
 The flags, all of them for `new-repo` only:

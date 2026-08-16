@@ -3,7 +3,7 @@
 #
 # Run this yourself: it installs system packages and modifies your PATH.
 #
-# Usage (from the manifest directory or the workspace topdir):
+# Usage (from the workspace repository or the workspace topdir):
 #   sh bootstrap/bootstrap.sh
 #
 # The script is idempotent: every step checks for an existing installation
@@ -23,17 +23,17 @@ die()   { printf '\033[1;31m[error]\033[0m %s\n' "$*" >&2; exit 1; }
 command_exists() { command -v "$1" >/dev/null 2>&1; }
 
 # ---------------------------------------------------------------------------
-# Locate the workspace topdir (the parent of the manifest directory)
+# Locate the workspace topdir (the parent of the workspace repository)
 # ---------------------------------------------------------------------------
 
 # The script may be invoked from any working directory, so everything is
 # resolved from the script's own location rather than from the caller's cwd.
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-MANIFEST_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-WORKSPACE_DIR="$(cd "$MANIFEST_DIR/.." && pwd)"
+REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+WORKSPACE_DIR="$(cd "$REPO_DIR/.." && pwd)"
 
 info "Workspace root : $WORKSPACE_DIR"
-info "Manifest dir   : $MANIFEST_DIR"
+info "Repository dir : $REPO_DIR"
 
 # ---------------------------------------------------------------------------
 # 1. Detect OS and package manager
@@ -211,8 +211,8 @@ info "Step 6: Initialising the west workspace..."
 if [ -d "$WORKSPACE_DIR/.west" ]; then
   ok ".west directory already exists; skipping west init"
 else
-  info "Running: west init -l manifest (from $WORKSPACE_DIR)"
-  (cd "$WORKSPACE_DIR" && west init -l manifest)
+  info "Running: west init -l workspace (from $WORKSPACE_DIR)"
+  (cd "$WORKSPACE_DIR" && west init -l workspace)
   ok "west workspace initialised"
 fi
 
@@ -233,12 +233,12 @@ ok "west update complete"
 
 info "Step 7: Linking workspace-root files..."
 
-# The links are relative, with targets under manifest/, for two reasons: a
-# `west update` of the manifest propagates edits straight through, and the
+# The links are relative, with targets under workspace/, for two reasons: a
+# `west update` of the repository propagates edits straight through, and the
 # links survive the whole workspace being moved.
 
 link_root_file() {
-  SRC_REL="$1"    # path relative to the workspace root, always under manifest/
+  SRC_REL="$1"    # path relative to the workspace root, always under workspace/
   DEST_NAME="$2"  # the name to create at the workspace root
   if [ -f "$WORKSPACE_DIR/$SRC_REL" ]; then
     ln -sfn "$SRC_REL" "$WORKSPACE_DIR/$DEST_NAME"
@@ -248,18 +248,18 @@ link_root_file() {
   fi
 }
 
-link_root_file "manifest/workspace-root/README.md"  "README.md"
-link_root_file "manifest/workspace-root/AGENTS.md"  "AGENTS.md"
-link_root_file "manifest/workspace-root/CLAUDE.md"  "CLAUDE.md"
-link_root_file "manifest/workspace-root/.gitignore" ".gitignore"
-link_root_file "manifest/west.yml"                  "west.yml"
+link_root_file "workspace/workspace-root/README.md"  "README.md"
+link_root_file "workspace/workspace-root/AGENTS.md"  "AGENTS.md"
+link_root_file "workspace/workspace-root/CLAUDE.md"  "CLAUDE.md"
+link_root_file "workspace/workspace-root/.gitignore" ".gitignore"
+link_root_file "workspace/west.yml"                  "west.yml"
 
 # The manage launcher needs the executable bit at its source, since the
 # symlink carries the mode of whatever it points at.
-if [ -f "$MANIFEST_DIR/manage.sh" ]; then
-  chmod +x "$MANIFEST_DIR/manage.sh"
+if [ -f "$REPO_DIR/manage.sh" ]; then
+  chmod +x "$REPO_DIR/manage.sh"
 fi
-link_root_file "manifest/manage.sh" "manage.sh"
+link_root_file "workspace/manage.sh" "manage.sh"
 
 # ---------------------------------------------------------------------------
 # 8. Ensure the workspace directories exist (idempotent)
@@ -283,4 +283,4 @@ info "Bootstrap complete."
 info "Next steps:"
 info "  1. Restart your shell (or run: export PATH=\"$LOCAL_BIN:\$PATH\")"
 info "  2. Run './manage.sh help' from the workspace root for common tasks."
-info "  3. Read README.md at the workspace root, or manifest/README.md for the full run-book."
+info "  3. Read README.md at the workspace root, or workspace/README.md for the full run-book."

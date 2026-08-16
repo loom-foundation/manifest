@@ -1,5 +1,5 @@
 # Keeps repositories free of secrets, OS junk, editor files, and per-user AI-agent artefacts.
-# Canonical source: manifest/repo-template/.
+# Canonical source: workspace/repo-template/.
 
 # ── Secrets: never commit ────────────────────────────────────────────────────
 .env

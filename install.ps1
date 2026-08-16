@@ -1,6 +1,6 @@
 # install.ps1: Loom Foundation one-line workspace installer for Windows PowerShell.
 #
-#   irm https://raw.githubusercontent.com/loom-foundation/manifest/main/install.ps1 | iex
+#   irm https://raw.githubusercontent.com/loom-foundation/workspace/main/install.ps1 | iex
 #
 # Takes a fresh Windows machine from nothing to a working Loom Foundation
 # workspace. It assumes nothing but PowerShell and winget: git is installed here
@@ -83,27 +83,27 @@ Info "Workspace: $workspace"
 New-Item -ItemType Directory -Force $workspace | Out-Null
 
 # ---------------------------------------------------------------------------
-# Clone (or fast-forward) the manifest repository inside the workspace
+# Clone (or fast-forward) the workspace repository inside the workspace
 # ---------------------------------------------------------------------------
 
-# The manifest repository must sit INSIDE the workspace directory: the bootstrap
-# resolves the workspace top directory as the parent of 'manifest', and
-# 'west init -l manifest' is run from that parent.
-$manifest = Join-Path $workspace 'manifest'
-if (Test-Path (Join-Path $manifest '.git')) {
-    Info 'manifest already present; updating.'
-    # A local manifest that has diverged, or has uncommitted work, must not abort
+# The workspace repository must sit INSIDE the workspace directory: the bootstrap
+# resolves the workspace top directory as the parent of 'workspace', and
+# 'west init -l workspace' is run from that parent.
+$repoDir = Join-Path $workspace 'workspace'
+if (Test-Path (Join-Path $repoDir '.git')) {
+    Info 'workspace repository already present; updating.'
+    # A local checkout that has diverged, or has uncommitted work, must not abort
     # the installer. git writes to stderr when it refuses a fast-forward, and under
     # $ErrorActionPreference='Stop' that becomes a terminating error before the exit
     # code can be inspected, so relax the preference and check the code instead.
     # The POSIX installer tolerates the same case.
-    & { $ErrorActionPreference = 'Continue'; git -C $manifest pull --ff-only 2>&1 | Write-Host }
+    & { $ErrorActionPreference = 'Continue'; git -C $repoDir pull --ff-only 2>&1 | Write-Host }
     if ($LASTEXITCODE -ne 0) {
-        Info 'Could not fast-forward the existing manifest; continuing with what is already on disk.'
+        Info 'Could not fast-forward the existing checkout; continuing with what is already on disk.'
     }
 } else {
-    Info 'Cloning manifest...'
-    git clone https://github.com/loom-foundation/manifest.git $manifest
+    Info 'Cloning the workspace repository...'
+    git clone https://github.com/loom-foundation/workspace.git $repoDir
 }
 
 # ---------------------------------------------------------------------------
@@ -116,4 +116,4 @@ Info 'Handing off to bootstrap...'
 # policy for THIS process only. No administrator rights are required and the
 # change does not persist beyond the current session.
 try { Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force } catch {}
-& (Join-Path $manifest 'bootstrap\bootstrap.ps1')
+& (Join-Path $repoDir 'bootstrap\bootstrap.ps1')

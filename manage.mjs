@@ -41,11 +41,11 @@ import path                              from 'node:path';
 import { fileURLToPath }                 from 'node:url';
 
 // ---------------------------------------------------------------------------
-// Paths, all resolved relative to this script's own location (manifest/), so
+// Paths, all resolved relative to this script's own location (workspace/), so
 // the CLI behaves identically whatever the current working directory is.
 // ---------------------------------------------------------------------------
-const HERE        = path.dirname(fileURLToPath(import.meta.url)); // manifest/
-const WORKSPACE   = path.resolve(HERE, '..');                     // workspace topdir
+const HERE        = path.dirname(fileURLToPath(import.meta.url)); // workspace/
+const TOPDIR      = path.resolve(HERE, '..');                     // workspace topdir
 const SCAFFOLD    = path.join(HERE, 'repo-template');
 const WEST_YML    = path.join(HERE, 'west.yml');
 
@@ -113,7 +113,7 @@ function firstLine(s) {
  *
  * Runs: west list -f "{name}|{path}|{url}"
  *
- * The manifest self-entry (`manifest|manifest|N/A`) is skipped, as is any row
+ * The manifest self-entry (`manifest|workspace|N/A`) is skipped, as is any row
  * with an empty url. Only rows carrying a real remote url are returned.
  *
  * Returns [] (and prints a loud diagnostic to stderr) when `west` is missing
@@ -122,7 +122,7 @@ function firstLine(s) {
 function westProjects() {
   const result = capture('west', ['list', '-f', '{name}|{path}|{url}']);
   if (!result.ok) {
-    console.error('Could not query projects via `west list`. Is the workspace initialised? Run: west init -l manifest');
+    console.error('Could not query projects via `west list`. Is the workspace initialised? Run: west init -l workspace');
     return [];
   }
 
@@ -244,7 +244,7 @@ function cmdDoctor() {
   for (const t of optional) check(t, false);
 
   if (anyMissing) {
-    console.error('\nOne or more required tools are missing. See manifest/README.md, Prerequisites.');
+    console.error('\nOne or more required tools are missing. See workspace/README.md, Prerequisites.');
     process.exit(1);
   } else {
     console.log('\nAll required tools found.');
@@ -273,7 +273,7 @@ function cmdStatus() {
     process.exit(1);
   }
   if (code !== 0) {
-    console.error('\nHint: if the workspace is not initialised, run: west init -l manifest');
+    console.error('\nHint: if the workspace is not initialised, run: west init -l workspace');
   }
   process.exit(code);
 }
@@ -355,7 +355,7 @@ function cmdNewRepo(args) {
     }
   } else {
     // 1. Check the scaffold before creating anything. repo-template/ ships with
-    //    the manifest repository, so a missing file means a broken workspace
+    //    the workspace repository, so a missing file means a broken workspace
     //    rather than a normal condition. Scaffolding on regardless would leave
     //    an empty directory and a repository with no commits.
     const missing = SCAFFOLD_FILES
@@ -364,7 +364,7 @@ function cmdNewRepo(args) {
     if (missing.length > 0) {
       console.error('\nScaffold files are missing, so the repository was not created.');
       for (const src of missing) console.error(`  not found: ${src}`);
-      console.error('\nrepo-template/ ships with the manifest repository. Restore it (for example');
+      console.error('\nrepo-template/ ships with the workspace repository. Restore it (for example');
       console.error('with `git -C ' + HERE + ' status`) and run this command again.');
       process.exit(1);
     }
@@ -465,7 +465,7 @@ function cmdNewRepo(args) {
 Next steps:
 ${isAdopting ? '' : `  · Edit ${repoDir}/README.md to fill in the description.\n`}${remoteSteps.join('\n')}
   · From the workspace topdir, run \`./manage.sh update\` to let west track the repository.
-  · Commit the west.yml update in manifest (if it changed).
+  · Commit the west.yml update in workspace (if it changed).
 `);
 }
 
@@ -656,8 +656,8 @@ function resolveRepoTarget(into, name) {
   const repoPathPosix = dirPosix ? `${dirPosix}/${name}` : name;
 
   // Guard against `..` traversal escaping the workspace.
-  const repoDir = path.resolve(WORKSPACE, repoPathPosix);
-  const rel     = path.relative(WORKSPACE, repoDir);
+  const repoDir = path.resolve(TOPDIR, repoPathPosix);
+  const rel     = path.relative(TOPDIR, repoDir);
   if (rel === '' || rel.startsWith('..') || path.isAbsolute(rel)) {
     console.error(`--into must stay inside the workspace; "${raw}" resolves outside it.`);
     process.exit(1);

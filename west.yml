@@ -5,7 +5,7 @@
 # functionality is used.
 #
 # Usage:
-#   west init -l manifest       # one-time: register the workspace
+#   west init -l workspace      # one-time: register the workspace
 #   west update -k -r           # clone or fast-forward all projects, keeping
 #                               # checked-out branches instead of detaching HEAD
 #   west manifest --freeze      # snapshot all revisions to SHAs
@@ -20,7 +20,7 @@ manifest:
     revision: main
 
   self:
-    path: manifest
+    path: workspace
 
   projects:
     - name: .github

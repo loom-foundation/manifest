@@ -1,7 +1,7 @@
 #!/bin/sh
 # install.sh: one-line Loom Foundation workspace installer for macOS and Linux.
 #
-#   curl -fsSL https://raw.githubusercontent.com/loom-foundation/manifest/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/loom-foundation/workspace/main/install.sh | sh
 #
 # Takes a bare machine to a working Loom workspace. Every Loom repository is
 # public, so no GitHub sign-in and no organisation membership are needed; plain
@@ -9,7 +9,7 @@
 #
 # This script assumes nothing but a POSIX shell and curl. It installs git via
 # the platform package manager when git is absent, creates the workspace,
-# clones the manifest repository INTO it, then hands off to the bootstrap that
+# clones the workspace repository INTO it, then hands off to the bootstrap that
 # installs the remaining tools (uv, west, Node.js, gh).
 #
 # Non-interactive: set LOOM_WORKSPACE=/path before running to skip the prompt.
@@ -29,8 +29,8 @@ case "$OS" in
     if   have apt-get; then PM=apt
     elif have dnf;     then PM=dnf
     elif have pacman;  then PM=pacman
-    else die "No supported package manager found (apt, dnf, or pacman). See https://github.com/loom-foundation/manifest#readme"; fi ;;
-  *) die "Unsupported OS: $OS. On Windows, use install.ps1. See https://github.com/loom-foundation/manifest#readme" ;;
+    else die "No supported package manager found (apt, dnf, or pacman). See https://github.com/loom-foundation/workspace#readme"; fi ;;
+  *) die "Unsupported OS: $OS. On Windows, use install.ps1. See https://github.com/loom-foundation/workspace#readme" ;;
 esac
 
 # --- git --------------------------------------------------------------------
@@ -71,14 +71,14 @@ esac
 info "Workspace: $workspace"
 mkdir -p "$workspace"
 
-MANIFEST_DIR="$workspace/manifest"
-if [ -d "$MANIFEST_DIR/.git" ]; then
-  info "manifest already present; updating."
-  git -C "$MANIFEST_DIR" pull --ff-only || true
+REPO_DIR="$workspace/workspace"
+if [ -d "$REPO_DIR/.git" ]; then
+  info "workspace repository already present; updating."
+  git -C "$REPO_DIR" pull --ff-only || true
 else
-  info "Cloning manifest..."
-  git clone https://github.com/loom-foundation/manifest.git "$MANIFEST_DIR"
+  info "Cloning the workspace repository..."
+  git clone https://github.com/loom-foundation/workspace.git "$REPO_DIR"
 fi
 
 info "Handing off to bootstrap..."
-exec sh "$MANIFEST_DIR/bootstrap/bootstrap.sh"
+exec sh "$REPO_DIR/bootstrap/bootstrap.sh"
