@@ -41,8 +41,8 @@ manifest:
       userdata:
         role: governance
 
-    - name: manifesto-site
-      path: manifesto-site
+    - name: app-manifesto-site
+      path: apps/app-manifesto-site
       description: "The site that publishes the manifesto and its signatories at theloommanifesto.org."
       userdata:
         role: application
@@ -58,3 +58,33 @@ manifest:
       description: "Note: a methodology for capturing intent (needs, requirements, design) as plain-text, Git-native artifacts."
       userdata:
         role: methodology
+
+    - name: app-note-docs-site
+      path: apps/app-note-docs-site
+      description: "The disposable VitePress renderer that builds the Note docs from corpus/note/docs into a static site."
+      userdata:
+        role: application
+
+    - name: app-sett
+      path: apps/app-sett
+      description: "sett, the Note reference tool."
+      userdata:
+        role: application
+
+    - name: skill-note
+      path: skills/note
+      description: "The note skill: a distilled operating guide to the Note method for agents."
+      userdata:
+        role: skill
+
+    - name: site-manifesto
+      path: sites/site-manifesto
+      description: "The built static HTML of the manifesto site (theloommanifesto.org)."
+      userdata:
+        role: site
+
+    - name: site-note-docs
+      path: sites/site-note-docs
+      description: "The built static HTML of the Note docs site."
+      userdata:
+        role: site
