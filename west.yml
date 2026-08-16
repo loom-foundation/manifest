@@ -53,6 +53,7 @@ manifest:
       description: "Conventions and principles for authoring clear, concise, and maintainable notes."
       userdata:
         role: methodology
+        protected: true
 
     - name: corpus-note
       path: corpora/note
