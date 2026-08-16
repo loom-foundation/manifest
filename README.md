@@ -275,5 +275,5 @@ An unknown command prints the help text and exits non-zero.
 
 - [`workspace-root/README.md`](workspace-root/README.md) is the day-to-day reference, symlinked to the workspace root. It is deliberately short; the depth lives here.
 - [`workspace-root/AGENTS.md`](workspace-root/AGENTS.md) is the brief for agents working in the workspace, symlinked to the workspace root as `AGENTS.md` and pointed at by `CLAUDE.md`.
-- The Foundation records the intent behind its work as Note corpora. The corpus in this workspace is `corpus/note`; start at its `README.md`. Foundation-wide governance instruments live in `org/governance/`, and the reasoning behind all of it is in `manifesto/`.
+- The Foundation records the intent behind its work as Note corpora. The corpus in this workspace is `corpora/note`; start at its `README.md`. Foundation-wide governance instruments live in `org/governance/`, and the reasoning behind all of it is in `manifesto/`.
 - [`repo-template/`](repo-template/) holds the starter files copied into every new repository.

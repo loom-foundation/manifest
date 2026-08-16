@@ -42,31 +42,31 @@ manifest:
         role: governance
 
     - name: app-manifesto-site
-      path: apps/app-manifesto-site
+      path: apps/manifesto-site
       description: "The site that publishes the manifesto and its signatories at theloommanifesto.org."
       userdata:
         role: application
 
-    - name: note-authoring
-      path: corpus/note-authoring
+    - name: corpus-note-authoring
+      path: corpora/note-authoring
       description: "Conventions and principles for authoring clear, concise, and maintainable notes."
       userdata:
         role: methodology
 
-    - name: note
-      path: corpus/note
+    - name: corpus-note
+      path: corpora/note
       description: "Note: a methodology for capturing intent (needs, requirements, design) as plain-text, Git-native artifacts."
       userdata:
         role: methodology
 
     - name: app-note-docs-site
-      path: apps/app-note-docs-site
-      description: "The disposable VitePress renderer that builds the Note docs from corpus/note/docs into a static site."
+      path: apps/note-docs-site
+      description: "The disposable VitePress renderer that builds the Note docs from corpora/note/docs into a static site."
       userdata:
         role: application
 
     - name: app-sett
-      path: apps/app-sett
+      path: apps/sett
       description: "sett, the Note reference tool."
       userdata:
         role: application
@@ -78,13 +78,13 @@ manifest:
         role: skill
 
     - name: site-manifesto
-      path: sites/site-manifesto
+      path: sites/manifesto
       description: "The built static HTML of the manifesto site (theloommanifesto.org)."
       userdata:
         role: site
 
     - name: site-note-docs
-      path: sites/site-note-docs
+      path: sites/note-docs
       description: "The built static HTML of the Note docs site."
       userdata:
         role: site
