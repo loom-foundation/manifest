@@ -69,6 +69,7 @@ manifest:
       userdata:
         role: application
         protected: true
+        required-checks: [build]
 
     - name: app-sett
       path: apps/sett
